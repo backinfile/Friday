@@ -1,178 +1,243 @@
 
+(function NumKit() {
+	Math.randInt = function (min, max) {
+		return Math.floor(Math.random() * (max - min + 1) + min);
+	}
+	Math.distance = function (posa, posb) {
+		var dx = posa[0] - posb[0];
+		var dy = posa[1] - posb[1];
+		return Math.sqrt(dx * dx + dy * dy);
+	}
+	Array.prototype.shuffle = function () {
+		for (var i = 0; i < this.length; i++) {
+			var rnd = Math.randInt(0, this.length - 1);
+			if (rnd == i)
+				continue;
+			var x = this[i];
+			this[i] = this[rnd];
+			this[rnd] = x;
+		}
+		return this;
+	}
+	Object.prototype.forEach = function(func) {
+		var keys = Object.keys(this);
+		for (var i=0; i<keys.length; i++) {
+			func(keys[i]);
+		}
+	}
+	Object.prototype.size = function() {
+		return Object.keys(this).length;
+	}
+	Array.prototype.remove = function(val) {
+		var index = this.indexOf(val);
+		if (index>=0) this.splice(index,1);
+		return this;
+	}
+})();
+
 var GameObject = {};
 
-GameObject.Card = (function() {
-	function Card(type,no, data) {
-		this.type = type;
-		this.no = no;
-		this.div = Control.newCardDiv(type, data);
+GameObject.Block = (function() {
+	function Block() {
+		this.data = {
+			rotate: [0,0,0],
+			translate: [0,0,0],
+			alpha: 1,
+			borderColor: 'black',
+			borderWidth: 3,
+			pos: [0,0],
+			size: [100,100],
+			mask: false,
+			selected: false,
+			backgroundImage: null,
+			backgroundColor: 'black',
+			backImage: null,
+			backColor: 'black'
+		};
+		this.div = document.createElement('div');
+		this.div.classList.add('block');
+		document.body.appendChild(this.div);
+	}
+	Block.prototype = {
+		
+	}
+	return Block;
+})();
+
+GameObject.Card = !function() {
+	function Card(type, data) {
 		this.data = data;
+		this.type = type;
 	}
 	Card.prototype = {
-	};
+		
+	}
 	return Card;
-})();
+}();
 
 
+/* 
 
-GameObject.Cards = (function() {
-	function Cards() {
-		this.div = Control.newCardsDiv();
-		this.cardList = [];
-	}
-	Cards.prototype = {
-		add: function(card) {
-			if (this.cardList.indexOf(card)<0) {
-				this.cardList.push(card);
-				this.div.add(card);
-			}
-		},
-		remove: function(card) {
-			this.cardList.remove(card);
-			this.div.remove(card);
+(function() {
+	function span(size, content,isbold=true, color=null){
+		var html = '<span style="font-size:'+size+'px;';
+		if (isbold) html += ' font-weight:bold;';
+		if (color) {
+			size += 8;
+			html += " background-color:"+color+";";
+			html += " display:inline-block;";
+			html += " width:"+size+'px;';
+			html += " height:"+size+'px;';
+			html += " line-height:"+size+'px;';
+			html += ' border-radius:5px;';
 		}
+		html += '">'+content+'</span>';
+		return html;
 	}
-	return Cards;
-})();
-
-
-GameObject.getCardWarp = function() {
-	var cardsWarp = new GameObject.Cards();
-	cardsWarp.div.setSize(1, 1);
-	cardsWarp.div.hideBorder();
-	cardsWarp.div.setPos(Game.EventPos[0], Game.EventPos[1]);
-	cardsWarp.div.show(false);
-	return cardsWarp;
-}
-
-GameObject.HandsDiv = (function() {
-	function HandsDiv() {
-		this.warps = [];
-	}
-	HandsDiv.prototype = {
-		push: function(card) {
-			var warp = GameObject.getCardWarp();
-			warp.add(card);
-			warp.div.show(true);
-			this.warps.push(warp);
-			this.flush();
-		},
-		remove: function(card) {
-			for (var i=0; i<this.warps.length; i++) {
-				var cards = this.warps[i];
-				if (cards.cardList[0] === card) {
-					cards.div.show(false);
-					this.warps.splice(i,1);
-					break;
-				}
-			}
-			this.flush();
-		},
-		animateRemove: function(card, callback) {
-			var index = -1;
-			var cnt = 0;
-			for (let i=0; i<this.warps.length; i++) {
-				if (this.warps[i].cardList[0] == card) {
-					index = i;
-					this.warps[i].div.show(false);
-					break;
-				}
-			}
-			if (index < 0) {
-				if (callback) callback();
-				return;
-			}
-			var len = this.warps.length;
-			if (len <= 0) {
-				if (callback) callback();
-				return;
-			}
-			for (let i=0; i<len; i++) {
-				Control.Animation.CardsDivMove(cards, this.getPos(i+(i>index?1:0),1), 
-					this.getPos(i), function() {
-					cnt++;
-					if (cnt >= len) {
-						if (callback) callback();
-					}
-				});
-			}
-		},
-		animatePush: function(callback) {
-			var len = this.warps.length;
-			var cnt = 0;
-			if (len <= 0) {
-				if (callback) callback();
-				return;
-			}
-			for (let i=0; i<len; i++) {
-				var cards = this.warps[i];
-				Control.Animation.CardsDivMove(cards, this.getPos(i), this.getPos(i,1), function() {
-					cnt++;
-					if (cnt >= len) {
-						if (callback) callback();
-					}
-				});
-			}
-		},
-		flush: function() {
-			for (let i=0; i<this.warps.length; i++) {
-				var pos = this.getPos(i);
-				this.warps[i].div.setPos(pos[0], pos[1]);
-				this.warps[i].div.setLayer(i+50);
-			}
-		},
-		getPushedPos: function() {
-			return this.getPos(this.warps.length, 1);
-		},
-		getPos: function(i, extra=0) {
-			var rightOffset = 100;
-			var len = this.warps.length + extra;
-			var cardWidth = 151;
-			var offsetX = 120;
-			var width = window.innerWidth - offsetX*2 - rightOffset;
-			var cell = width/len;
-			var gap = cell - cardWidth;
-			if (gap > 3) {
-				var gap = 3;
-				var cell = cardWidth+gap;
-				var width = cell*len;
-				var offsetX = (window.innerWidth-width-rightOffset)/2
-				return [offsetX+cell*i+gap/2, 400];
-			} else {
-				var offsetX = 120;
-				var width = window.innerWidth - offsetX*2 - rightOffset;
-				var cell = width/len;
-				var gap = cell - cardWidth;
-				return [offsetX+cell*i+gap/2, 400];
-			}
-		}
-	}
-	return HandsDiv;
-})();
-
-
-GameObject.Init = function() {
-	GameObject.AllCards = {};
-	var no = 0;
-	Resources.CardDate.forEach(function(key) {
-		GameObject.AllCards[key] = [];
-		var datas = Resources.CardDate[key];
-		datas.forEach(function(data) {
-			for (var k=0; k<data.num; k++) {
-				no++;
-				var card = new GameObject.Card(key,no,data);
-				GameObject.AllCards[key].push(card);
-			}
+	function CardDiv(type, data) {
+		this.type = type;
+		this.data = data;
+		this.div = document.createElement('div');
+		var div = this.div;
+		//document.body.appendChild(div);
+		div.style.width = Resources.Image[type].size.width;
+		div.style.height = Resources.Image[type].size.height;
+		div.style.textAlign = 'center';
+		div.style.overflow = 'hidden';
+		div.style.borderRadius = '10px';
+		div.style.backgroundImage = 'url('+Resources.Image[type].path+')';
+		//div.style.boxSizing = 'border-box';
+		//div.style.border = '3px solid rgba(255,255,255,0)';
+		//div.style.border = '3px solid white';
+		div.style.position = 'relative';
+		div.style.float = 'left';
+		div.style.boxShadow = '-1px 1px 1px black';
+		
+		this.rotate = 0;
+		
+		var mask = document.createElement('div');
+		this.mask = mask;
+		mask.style.width = div.style.width;
+		mask.style.height = div.style.height;
+		mask.style.backgroundColor = 'rgba(255,255,255,0)';
+		mask.style.position = 'absolute';
+		mask.style.left = 0;
+		mask.style.top = 0;
+		
+		if (data.skill) data.skill.forEach(function(key) {
+			var title = '['+Resources.SkillShortcut[key](data.skill[key])+']';
+			title += ' '+Resources.SkillDescription[key](data.skill[key]);
+			div.title = title;
 		});
-	});
-	GameObject.Mask = Control.getMask();
-	GameObject.Message = Control.getMessage();
-	GameObject.MessageTip = Control.getMessage();
-	GameObject.Buttons = Control.getButtons(['使用技能','结算', '确认']);
-	GameObject.HandsDiv = new GameObject.HandsDiv();
-	// GameObject.HandsDiv.push(GameObject.AllCards['agingCard'][0]);
-}
-
-
+		
+		var title = Resources.CardTypeName[type];
+		if (type == 'agingCard' || type == 'battleCard') {
+			var t = '<br><br>'+span(24, title[0]);
+			t += span(18,'<br><br>')+span(42,data.attack)+span(18,'<br><br>');
+			data.skill.forEach(function(key) {
+				t += span(14,Resources.SkillShortcut[key](data.skill[key]));
+			});
+			var texts = document.createElement('div');
+			texts.style.position = 'relative';
+			texts.innerHTML = t;
+			div.appendChild(texts);
+			
+		} else if (type == 'hazardCard'){
+			var isRotate = true;
+			var fontsize = 24;
+			var t = span(18,'<br>')+span(20, title[0]);
+			var alpha = 0.15;
+			t += span(14,'<br><br>')+span(fontsize,data.aim.white,false,'rgba(255,255,255,'+alpha+')');
+			t += span(fontsize,data.aim.green,false,'rgba(0,255,0,'+alpha+')');
+			t += span(fontsize,data.aim.yellow,false,'rgba(255,255,0,'+alpha+')');
+			t += span(fontsize,data.aim.red,false,'rgba(255,0,0,'+alpha+')');
+			
+			if (isRotate) {
+				t += span(18, '<br><br>');
+				t += '<div style="transform:rotate(180deg)">';
+			} else {
+				t += span(18, '<br><br>');
+			}
+			t += span(20, title[1]);
+			t += span(12,'<br>')+span(32,data.attack)+span(12,'<br>');
+			data.skill.forEach(function(key) {
+				t += span(14,Resources.SkillShortcut[key](data.skill[key]));
+			});
+			if (isRotate) t += '</div>';
+			
+			var texts = document.createElement('div');
+			texts.style.position = 'relative';
+			texts.innerHTML = t;
+			div.appendChild(texts);
+			
+		} else if (type == 'pirateCard'){
+		}
+		div.appendChild(mask);
+		
+		var selectedDiv = document.createElement('div');
+		this.selectedDiv = selectedDiv;
+		selectedDiv.style.width = div.style.width;
+		selectedDiv.style.height = div.style.height;
+		selectedDiv.style.backgroundImage = 'url('+Resources.Image.selected.path+')';
+		selectedDiv.style.position = 'absolute';
+		selectedDiv.style.left = 0;
+		selectedDiv.style.top = 0;
+		selectedDiv.style.visibility = 'hidden';
+		div.appendChild(selectedDiv);
+	}
+	CardDiv.prototype = {
+		recover: function() {
+			this.div.style.transform = 'none';
+		},
+		show: function(isTrue){
+			if (isTrue) {
+				this.div.visibility = 'visible';
+			} else {
+				this.div.visibility = 'hidden';
+				this.selectedDiv.style.visibility = 'hidden';
+			}
+		},
+		setRotate: function(isTrue=true) {
+			if (isTrue === true) {
+				this.div.style.transform = 'rotate(180deg)';
+				this.rotate = 180;
+			} else if (isTrue === false) {
+				this.div.style.transform = '';
+				this.rotate = 0;
+			} else {
+				this.div.style.transform = 'rotate('+isTrue+'deg)';
+				this.rotate = isTrue;
+			}
+		},
+		canBeSelect: function(isTrue) {
+			if (isTrue) {
+				this.div.style.border = '1px solid #33C';
+			} else  {
+				//this.div.style.border = '3px solid white';//rgba(255,255,255,0)';
+				this.div.style.border = 'none';
+			}
+		},
+		used: function(isTrue) {
+			if (isTrue) {
+				this.mask.style.backgroundColor = 'rgba(255,255,255,0.5)';
+				this.canBeSelect(false);
+			} else {
+				this.mask.style.backgroundColor = 'rgba(255,255,255,0)';
+			}
+		},
+		selected: function(isTrue=true) {
+			if (isTrue) {
+				this.selectedDiv.style.visibility = 'visible';
+			} else {
+				this.selectedDiv.style.visibility = 'hidden';
+				//this.div.style.visibility = 'hidden';
+			}
+		}
+	};
+	Control.newCardDiv = function(type, data) {
+		return new CardDiv(type, data);
+	}
+})();
+ */
 
 
