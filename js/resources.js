@@ -52,6 +52,8 @@ Resources.CardTypeName = {
 	hazardCard: ['冒险','知识'],
 	pirateCard: ['海盗']
 };
+Resources.StepName = ['绿色', '黄色', '红色', '海盗'];
+Resources.StepType = ['green', 'yellow', 'red'];
 
 Resources.Image = {
 	agingCard: {path:'img/aging.jpg', size:{width:145, height:231}},
@@ -77,7 +79,7 @@ Resources.LoadImage = function(callback) {
 	}
 }
 
-Resources.CardDate = {
+Resources.CardData = {
 		// 战力 张数 销毁花费 技能
 	agingCard: [
 		{attack:-1, num:1, 	cost:2, skill:{}},
@@ -98,7 +100,7 @@ Resources.CardDate = {
 		{attack:3,num:1,cost:1,skill:{DESTORY:1},	aim:{white:4,green:4,yellow:7,red:11}},
 		{attack:4,num:1,cost:1,skill:{DESTORY:1},	aim:{white:5,green:5,yellow:9,red:14}},
 		{attack:4,num:1,cost:1,skill:{DESTORY:1},	aim:{white:5,green:5,yellow:9,red:14}},
-		{attack:0,num:1,cost:1,skill:{PLACE:1},	aim:{white:1,green:0,yellow:1,red:3}},
+		{attack:0,num:1,cost:1,skill:{PLACE:1},		aim:{white:1,green:0,yellow:1,red:3}},
 		{attack:2,num:1,cost:1,skill:{EXCHANGE:1},	aim:{white:3,green:2,yellow:5,red:8}},
 		{attack:2,num:1,cost:1,skill:{DOUBLE:1},	aim:{white:3,green:2,yellow:5,red:8}},
 		{attack:3,num:1,cost:1,skill:{CARD:1},		aim:{white:4,green:4,yellow:7,red:11}},
